@@ -1,70 +1,86 @@
 # Game Event Analytics
 
-Where do new players of a mobile game drop off, and does advertising help or hurt their return?
-About 71 million events analysed with SQL (DuckDB, reading Parquet directly) and Python, with a one-page Power BI dashboard and a tracking plan.
+[![CI](https://github.com/DJ-Papy/game-event-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/DJ-Papy/game-event-analytics/actions/workflows/ci.yml)
 
-**Dashboard:** [`docs/dashboard.pdf`](docs/dashboard.pdf) · Power BI file: `dashboard/game-event-analytics.pbix` · [One-page summary](docs/summary.md) · [Tracking plan](docs/tracking_plan.md)
+**Scenario.** The live-ops team of a free-to-play mobile game wants to know where new players are lost, and whether ads drive them away, before changing the ad configuration.
+**Data.** 71 million events of a real mobile game over six weeks (public Kaggle dataset), analysed with SQL (DuckDB on Parquet) and Python, reported in Power BI.
+
+**Dashboard:** [`docs/dashboard.pdf`](docs/dashboard.pdf) · [One-page summary](docs/summary.md) · [Tracking plan](docs/tracking_plan.md)
 
 ![One-page dashboard](docs/dashboard.png)
 
-## Key findings
+## Recommendations
 
-- **New players drop off from one day to the next, not in the core progression.** 94.5% of new players reach the first new zone, but only 37.0% come back the next day, 6.7% after 7 days and 2.9% after 14 days (about 44,000 players at D1, 95% CI 36.6–37.5%).
+1. **Decide on ad frequency with a properly sized test, not with this data.** At the same level of play, new players who see more interstitials come back as often or slightly more: nothing shows that ads drive them away, but exposure also follows play time, so this is not proof either way.
+2. **Re-run the `AdsConfig_iOS` test at scale.** With about 1,000 players per variant it could only detect a 6-point change in D1. A 2-point change needs about 9,400 players per variant.
+3. **Fix the tracking before the next analysis.** Purchases are recorded on Android only, 10.4% of events have no session id, the ad revenue property was renamed mid-window, and one day of data is missing ([tracking plan](docs/tracking_plan.md)).
+
+## Key results
+
+- **New players drop off from one day to the next, not in the core progression.** 94.5% reach the first new zone, but only 37.0% come back the next day, 6.7% after 7 days and 2.9% after 14 days (about 44,000 players at D1, 95% CI 36.6–37.5%).
 - **iPhone retains slightly better than Android** at D1 (40.5% vs 35.6%) and D7 (7.5% vs 6.4%); the gap is within the margin of error at D14.
-- **Ad exposure and retention move together, but this is not causal.** Heavy players see more ads and return more. Within activity quartiles the gap shrinks a lot.
-- **Rewarded video earns about twice as much per impression as interstitials** (about $29 vs $14 per 1,000 views, ad-network estimate).
-- **The existing A/B test (AdsConfig_iOS) is underpowered** (about 1,000 players per variant): D1 38.3% / 38.3% / 39.7%, no conclusion. Detecting a 2-point change would need about 9,400 players per variant.
+- **Rewarded video earns about twice as much per impression as interstitials** (about $29 vs $14 per 1,000 impressions, ad-network estimate); about $0.23 of ad revenue per active player per day.
+- **`AdsConfig_iOS`: no retention difference detected** (D1 38.3% / 38.3% / 39.7%). Variant B shows about 20% fewer interstitials on the first day, a lead to confirm.
 
-## Method
+## How the analysis is built
 
-| Step | Notebook |
+```mermaid
+flowchart LR
+    raw["68 Parquet files<br/>71M events"] --> checks["Data checks"]
+    checks --> base["Base tables<br/>sql/01"]
+    base --> metrics["Metrics<br/>sql/02-05 + game_events"]
+    metrics --> nb["Notebooks 00-05<br/>analysis"]
+    metrics --> csv["dashboard/data/*.csv"]
+    csv --> pbi["Power BI report"]
+    raw --> inv["Tracking inventory<br/>docs/*.csv"]
+```
+
+Every definition is written once, in `sql/` or in the `game_events` package, and used by both the notebooks and the dashboard export. The pipeline stops if a data check fails.
+
+| Decision | Reason |
 |---|---|
-| Load Parquet files, check quality | `notebooks/00_load_and_quality.ipynb` |
-| Sessions, funnel | `notebooks/01_sessions_and_funnel.ipynb` |
-| Cohort retention (Wilson intervals) | `notebooks/02_cohort_retention.ipynb` |
-| Ad monetisation, exposure vs retention | `notebooks/03_ad_monetisation.ipynb` |
-| Event inventory, tracking plan | `notebooks/04_tracking_inventory.ipynb` |
-| A/B test analysis, power analysis | `notebooks/05_ab_test_ads_config.ipynb` |
-| Aggregated tables for the dashboard | `scripts/export_dashboard_data.py`, using the queries in `sql/` |
-
-Choices that matter: a session is a `user_session_id`; new players are players with a `firstOpen` event; retention is computed only on cohorts whose target day is fully observed (last full day 2025-04-09) and never on the data gap of 2025-03-27; the day-0 activity of a player is used to control the ad-exposure comparison.
-
-The core definitions (new players, active days, retention, new-player funnel, first-day ad exposure) are written once in [`sql/`](sql/) and run by the export script, so the dashboard uses the SQL shown in the repository.
+| A new player is a player with a `firstOpen` event in the window | the window starts in the middle of the game's life: "first seen" would include older players |
+| Retention only on cohorts whose day N is observed, never on 2025-03-27 | missing data would be read as churn |
+| An active day is any event, checked against "a session was opened" | 10.4% of events are server-side and could inflate retention |
+| Ad exposure compared within quartiles of first-day activity | players who play more see more ads and come back more |
+| Wilson and Newcombe intervals, bootstrap for revenue per player | small groups, rates near 0, skewed revenue |
+| Purchase rate measured on Android players only | purchases are not tracked on iPhone |
 
 ## Limitations
 
 - Six weeks of data: no long-term retention, no seasonality.
 - 27 March shows an unexplained drop in active players (about 1,400 vs 3,500–4,500); it is excluded from retention and its cause is not established.
-- One Parquet file (`part-00049`) is truncated and skipped.
-- 10.4% of events have no session id and are excluded from session metrics.
-- Purchases are tracked on Android only: the purchase step of the funnel is also measured on Android new players alone, and no purchase rate can be given for iPhone players.
-- Ad revenue is a network estimate; its level shifts by about 27% when the field was renamed (`value` to `amount`) in late March. Whether this is a real or a measurement change is not established.
+- One Parquet file (`part-00049`) is truncated in the source dataset and skipped.
+- Ad revenue is a network estimate; its level shifts by about 27% when the property was renamed (`value` to `amount`) in late March. Whether this is a real or a measurement change is not established.
 - Exposure vs retention is observational and confounded by play volume.
 
-## How to run
+## Repository
+
+```
+src/game_events/   package: data access, checks, metrics, A/B statistics, exports
+sql/               core definitions (base tables, retention, funnel, exposure, experiment)
+notebooks/         analysis, one question per notebook
+tests/             unit and end-to-end tests on generated data, run by CI on every push
+dashboard/         Power BI report and the CSV files it reads
+docs/              summary, tracking plan, event inventory, dashboard export
+data/              data source and download instructions (raw files are not committed)
+```
+
+## Run it
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -e ".[notebooks,dev]"
 # download the Parquet files into data/raw/player_analytics/ (see data/README.md)
-jupyter lab                                 # run notebooks 00 to 05 in order
-python scripts/export_dashboard_data.py     # runs sql/ and writes dashboard/data/*.csv
+python -m game_events build        # data checks, then dashboard/data/*.csv
+python -m game_events inventory    # docs/*.csv for the tracking plan
+pytest                             # tests (no data needed)
+jupyter lab                        # notebooks 00 to 05
 ```
 
-Then open `dashboard/game-event-analytics.pbix` in Power BI Desktop (the CSV files in `dashboard/data/` are its source). The queries read them from `P:\`; on Windows, run `subst P: "<path to dashboard\data>"` first, or edit the source path in Power Query.
-
-## Structure
-
-```
-data/            data source notes (raw files are not committed)
-sql/             core definitions: base tables, retention, funnel, first-day ad exposure
-notebooks/       analysis, one notebook per question
-scripts/         Parquet loader, dashboard export
-dashboard/       Power BI file and its aggregated CSV sources
-docs/            dashboard (PDF, PNG), summary, tracking plan, event inventory
-```
+The Power BI report `dashboard/game-event-analytics.pbix` reads the CSV files from `P:\`: on Windows, run `subst P: "<path to dashboard\data>"` first, or edit the source path in Power Query.
 
 ## Data and licence
 
-Kaggle, *Player Analytics Event Stream Data*, licence CC BY 4.0 as stated on the Kaggle page when the data was downloaded (2026-11-01). Details in [`data/README.md`](data/README.md).
+Kaggle, *Player Analytics Event Stream Data*, licence CC BY 4.0 as stated on the Kaggle page when the data was downloaded (2026-11-01). Only aggregated tables and documentation are published here. Details in [`data/README.md`](data/README.md).
