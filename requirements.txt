@@ -1,9 +1,0 @@
-# Tested with Python 3.12 / 3.13, DuckDB 1.5 and 2.0
-duckdb>=1.1
-pandas>=2.2
-numpy>=1.26
-scipy>=1.13
-statsmodels>=0.14
-matplotlib>=3.8
-jupyterlab>=4.0
-ipywidgets>=8.0
