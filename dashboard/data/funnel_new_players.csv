@@ -1,0 +1,6 @@
+step_order,event,players,pct_of_first,note
+1,gameOpened,48288,100.0,
+2,tokenCashout,46918,97.2,
+3,deviceUnlocked,46048,95.4,
+4,zoneUnlocked,45650,94.5,
+5,purchaseCompleted,720,1.5,Android only

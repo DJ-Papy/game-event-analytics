@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+*.duckdb
+*.duckdb.wal
+# raw data is too large for git (3.3 GB): see data/README.md
+data/raw/
+*.log
+.tmp/
