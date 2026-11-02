@@ -105,4 +105,6 @@ def d1_by_exposure(con, column="inter_day0", where="", complete=True):
     df = add_rate(df, "retained", "players", name="d1_pct")
     labels = [label for label, _ in EXPOSURE_BUCKETS]
     df = df.set_index("bucket").reindex(labels).reset_index()
-    return df if complete else df.dropna(subset=["players"]).astype({"players": int, "retained": int})
+    if not complete:
+        return df.dropna(subset=["players"]).astype({"players": int, "retained": int})
+    return df.astype({"players": "Int64", "retained": "Int64"})

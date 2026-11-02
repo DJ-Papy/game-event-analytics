@@ -41,8 +41,9 @@ def event_inventory(con):
 
 
 def event_properties(con, inventory):
-    """One row per event and property key: coverage, approximate cardinality, first and last day.
-    Scans every row (a few minutes on the full data)."""
+    """One row per event and property key: coverage, approximate cardinality (HyperLogLog, a few
+    percent off and not identical from one DuckDB version to another), first and last day.
+    Scans every row (about a minute on the full data)."""
     df = con.execute("""
         SELECT event_name,
                k                        AS property,
@@ -65,15 +66,16 @@ def event_properties(con, inventory):
 
 
 def user_properties(con):
-    """Player properties (user_properties_custom) on a seeded 1% sample of events."""
+    """Player properties (user_properties_custom) on a seeded 1% sample of events, with exact
+    distinct counts in the sample."""
     con.execute(f"CREATE OR REPLACE TEMP TABLE ev_sample AS "
                 f"SELECT user_properties_custom FROM events USING SAMPLE {USER_PROPERTIES_SAMPLE}")
     n_sample = con.execute("SELECT COUNT(*) FROM ev_sample").fetchall()[0][0]
     df = con.execute("""
-        SELECT k                        AS property,
-               COUNT(*)                 AS n_in_sample,
-               APPROX_COUNT_DISTINCT(v) AS approx_distinct_values,
-               ANY_VALUE(LEFT(v, 40))   AS example
+        SELECT k                      AS property,
+               COUNT(*)               AS n_in_sample,
+               COUNT(DISTINCT v)      AS distinct_values_in_sample,
+               ANY_VALUE(LEFT(v, 40)) AS example
         FROM (SELECT UNNEST(map_keys(user_properties_custom))   AS k,
                      UNNEST(map_values(user_properties_custom)) AS v
               FROM ev_sample)
@@ -81,7 +83,7 @@ def user_properties(con):
         ORDER BY 2 DESC
     """).df()
     df["pct_of_events"] = (100 * df["n_in_sample"] / n_sample).round(1)
-    df.loc[df["approx_distinct_values"] > MAX_DISTINCT_FOR_EXAMPLE, "example"] = ""
+    df.loc[df["distinct_values_in_sample"] > MAX_DISTINCT_FOR_EXAMPLE, "example"] = ""
     return df, n_sample
 
 
