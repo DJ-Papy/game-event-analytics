@@ -16,11 +16,21 @@ GROUP BY user_id;
 
 -- Active days: any event counts. session_started flags the days with a _sessionStart,
 -- used to check that server-side events (no session id) do not inflate retention.
+-- sessions and play_events measure how much the player played that day (play events
+-- exclude platform events starting with "_", ad events and app background/focus).
+-- Aggregating here, before any join, keeps later joins small whatever the Parquet
+-- cardinality estimates of the DuckDB version.
 CREATE OR REPLACE TABLE active_days AS
 SELECT
   user_id,
-  CAST(ts AS DATE)                      AS day,
-  BOOL_OR(event_name = '_sessionStart') AS session_started
+  CAST(ts AS DATE)                                                    AS day,
+  BOOL_OR(event_name = '_sessionStart')                               AS session_started,
+  COUNT(DISTINCT user_session_id) FILTER (WHERE user_session_id <> '') AS sessions,
+  COUNT(*) FILTER (
+    WHERE event_name NOT LIKE '\_%' ESCAPE '\'
+      AND event_name NOT IN ('adImpression', 'adsStart', 'adsReturned', 'interstitialLifecycle',
+                             'rvLifecycle', 'rvRewardClaim', 'appBackground', 'appFocus')
+  )                                                                   AS play_events
 FROM events
 GROUP BY user_id, CAST(ts AS DATE);
 

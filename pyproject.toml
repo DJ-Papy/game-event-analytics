@@ -9,7 +9,9 @@ description = "Retention, funnel, ad monetisation and A/B test analysis of a mob
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "duckdb>=1.1",
+    # DuckDB 2.0 estimates a list of Parquet files at a few dozen rows and builds join hash
+    # tables on the 71M events (out of memory). Kept on 1.x until that is fixed.
+    "duckdb>=1.1,<2",
     "pandas>=2.2",
     "numpy>=1.26",
     "scipy>=1.13",

@@ -4,18 +4,18 @@
 -- A step counts only if its first occurrence comes at or after the first occurrence of the
 -- previous step. purchaseCompleted is tracked on Android only, hence the Android counts.
 WITH firsts AS (
+  -- aggregated per player before the join, so the join stays small
   SELECT
-    e.user_id,
-    MIN(e.ts) FILTER (WHERE e.event_name = 'gameOpened')        AS t1,
-    MIN(e.ts) FILTER (WHERE e.event_name = 'tokenCashout')      AS t2,
-    MIN(e.ts) FILTER (WHERE e.event_name = 'deviceUnlocked')    AS t3,
-    MIN(e.ts) FILTER (WHERE e.event_name = 'zoneUnlocked')      AS t4,
-    MIN(e.ts) FILTER (WHERE e.event_name = 'purchaseCompleted') AS t5
-  FROM events e
-  JOIN funnel_population USING (user_id)
-  WHERE e.event_name IN ('gameOpened', 'tokenCashout', 'deviceUnlocked',
-                         'zoneUnlocked', 'purchaseCompleted')
-  GROUP BY e.user_id
+    user_id,
+    MIN(ts) FILTER (WHERE event_name = 'gameOpened')        AS t1,
+    MIN(ts) FILTER (WHERE event_name = 'tokenCashout')      AS t2,
+    MIN(ts) FILTER (WHERE event_name = 'deviceUnlocked')    AS t3,
+    MIN(ts) FILTER (WHERE event_name = 'zoneUnlocked')      AS t4,
+    MIN(ts) FILTER (WHERE event_name = 'purchaseCompleted') AS t5
+  FROM events
+  WHERE event_name IN ('gameOpened', 'tokenCashout', 'deviceUnlocked',
+                       'zoneUnlocked', 'purchaseCompleted')
+  GROUP BY user_id
 ),
 
 reached AS (
