@@ -23,6 +23,10 @@ def connect_events(pattern: str, memory_limit: str = "2GB"):
 
     con = duckdb.connect()                             # in-memory: nothing is written to disk
     con.sql(f"SET memory_limit='{memory_limit}'")
+    try:
+        con.sql("SET enable_progress_bar = false")     # no progress widget saved in the notebooks
+    except duckdb.Error:
+        pass                                           # Jupyter without ipywidgets: no widget is drawn anyway
     con.sql(
         "CREATE VIEW events AS "
         "SELECT * EXCLUDE (event_timestamp), CAST(event_timestamp AS TIMESTAMP) AS ts "
