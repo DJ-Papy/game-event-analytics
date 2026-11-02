@@ -41,10 +41,10 @@ Every definition is written once, in `sql/` or in the `game_events` package, and
 |---|---|
 | A new player is a player with a `firstOpen` event in the window | the window starts in the middle of the game's life: "first seen" would include older players |
 | Retention only on cohorts whose day N is observed, never on 2025-03-27 | missing data would be read as churn |
-| An active day is any event, checked against "a session was opened" | 10.4% of events are server-side and could inflate retention |
+| An active day is any event, checked against "a session was opened" | server-side events alone add 6 players at D1; the 2.1-point gap with the stricter definition comes from sessions that continue past midnight |
 | Ad exposure compared within quartiles of first-day activity | players who play more see more ads and come back more |
 | Wilson and Newcombe intervals, bootstrap for revenue per player | small groups, rates near 0, skewed revenue |
-| Purchase rate measured on Android players only | purchases are not tracked on iPhone |
+| Purchase rate measured on Android players only (2.1%) | purchases are not tracked on iPhone |
 
 ## Limitations
 

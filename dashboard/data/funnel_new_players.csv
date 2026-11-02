@@ -1,6 +1,6 @@
-step_order,event,players,pct_of_first,note
-1,gameOpened,48288,100.0,
-2,tokenCashout,46918,97.2,
-3,deviceUnlocked,46048,95.4,
-4,zoneUnlocked,45650,94.5,
-5,purchaseCompleted,720,1.5,Android only
+step_order,event,players,pct_of_first,note,android_players,pct_of_first_android
+1,gameOpened,48288,100.0,,34005,100.0
+2,tokenCashout,46918,97.2,,32789,96.4
+3,deviceUnlocked,46048,95.4,,32039,94.2
+4,zoneUnlocked,45650,94.5,,31753,93.4
+5,purchaseCompleted,720,1.5,Android only,720,2.1
