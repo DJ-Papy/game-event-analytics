@@ -1,6 +1,6 @@
 # Tracking plan (observed from the data)
 
-This plan describes what the game **actually tracks**, as seen in 70.9 million events from 71,679 players (2025-02-28 to 2025-04-10). It was built from the files `event_inventory.csv`, `event_properties.csv` and `user_properties.csv`, produced by `notebooks/04_tracking_inventory.ipynb`.
+This plan describes what the game **actually tracks**, as seen in 70.9 million events from 71,679 players (2025-02-28 to 2025-04-10). It was built from the files `event_inventory.csv`, `event_properties.csv` and `user_properties.csv`, produced by `python -m game_events inventory` (also run in `notebooks/04_tracking_inventory.ipynb`).
 
 **Reading rule.** Names, volumes, properties and dates are observed. The column *Inferred trigger* and the *Use* column are interpretations of the event names and properties: the game's code and design documents were not available, so they must be confirmed with the game team.
 
