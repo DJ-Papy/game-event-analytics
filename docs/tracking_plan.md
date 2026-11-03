@@ -1,6 +1,8 @@
 # Tracking plan (observed from the data)
 
-This plan describes what the game **actually tracks**, as seen in 70.9 million events from 71,679 players (2025-02-28 to 2025-04-10). It was built from the files `event_inventory.csv`, `event_properties.csv` and `user_properties.csv`, produced by `notebooks/04_tracking_inventory.ipynb`.
+This plan describes what the game **actually tracks**, as seen in 70.9 million events from 71,679 players (2025-02-28 to 2025-04-10). It was built from the files `event_inventory.csv`, `event_properties.csv` and `user_properties.csv`, produced by `python -m game_events inventory` (also run in `notebooks/04_tracking_inventory.ipynb`).
+
+**Counts.** Distinct counts quoted in this plan are exact (full scan for event properties, seeded 1% sample for player properties). The `approx_distinct_values` column of `event_properties.csv` is a fast estimate and can differ by a few percent.
 
 **Reading rule.** Names, volumes, properties and dates are observed. The column *Inferred trigger* and the *Use* column are interpretations of the event names and properties: the game's code and design documents were not available, so they must be confirmed with the game team.
 
@@ -25,11 +27,11 @@ Other raw columns: `event_receive_time` (dates before `ts` in the rows inspected
 | Property | Filled on | Distinct values | Note |
 |---|---|---|---|
 | `currentMap` | 99.8% | 7 | Current map of the player |
-| `appVersion` | 99.6% | 17 | Used to follow releases |
+| `appVersion` | 99.6% | 19 | Used to follow releases |
 | `noAdsOwned`, `robotOwned` | 99.6% | 2 | Ownership flags |
-| `fbInstallationId`, `adjustId` | 99.6% | about 26,000 to 27,000 in the sample | Third-party identifiers: do not publish |
-| `dbChurnPrediction` | 23.5% | about 8,600 | Looks like a predicted score; only on some events |
-| `dbPurchasePrediction` | 1.4% | about 480 | Looks like a predicted score; rare |
+| `fbInstallationId`, `adjustId` | 99.6% | about 54,000 in the sample | Third-party identifiers: do not publish |
+| `dbChurnPrediction` | 24.2% | 23,860 | Looks like a predicted score; only on some events |
+| `dbPurchasePrediction` | 1.4% | 648 | Looks like a predicted score; rare |
 
 The two prediction properties are not fully documented: check how they are computed before using them as features of an analysis, since they may already use player behaviour.
 
@@ -74,7 +76,7 @@ Volumes are events (players). *Inferred trigger* and *Use* are interpretations.
 | `gamerRoadClaimed` | 42,029 (12,256) | `rewardLevel`, `gamerRoadLevel`, `rewardType` | A pass reward is claimed | Pass usage |
 | `boosterClaimed`, `offerClaim` | 291 K; 388 K | `boosterType` / `rewardType`, `claimType`, `gemInWallet` | A booster or offer is claimed (often via rewarded video) | Reward use |
 | `skinOpened`, `skinActivated` | 184 K; 50 K | `openedSkin`, `activatedSkin` | Skin screen / skin chosen | Cosmetics |
-| `buttonClick` | 312,980 (45,362) | `buttonName` (46 values), `mapId`, `dayState` | A button is pressed | UI use |
+| `buttonClick` | 312,980 (45,362) | `buttonName` (45 values), `mapId`, `dayState` | A button is pressed | UI use |
 | `hapticOnOff`, `musicOnOff`, `soundOnOff` | 19 K, 13 K, 13 K | `...State`, `timeStamp` | A setting is toggled | Settings |
 
 ### Economy
@@ -92,13 +94,13 @@ Volumes are events (players). *Inferred trigger* and *Use* are interpretations.
 | `adImpression` | 1.9 M (59,698) | `adFormat` (INTER / REWARDED), `adSource` (9), `adUnitName`, `currency`, revenue under `value` then `amount`, `placement` | An ad is displayed and paid | **Revenue and exposure** |
 | `adsStart`, `adsReturned` | 1.78 M each | `adType`, `mapId`, `timeStamp` | An interstitial starts / the player returns | Time spent in ads |
 | `interstitialLifecycle`, `rvLifecycle` | 5.1 M; 4.5 M | `state`, `errorInfo`, `id` | Ad load / display states | Delivery quality |
-| `rvRewardClaim` | 498,847 (28,327) | `adPlacement` (89), `tRvInSession`, `tPlacementInSession`, `mapId` | Reward given after a rewarded video | **Starts 2025-03-12** |
+| `rvRewardClaim` | 498,847 (28,327) | `adPlacement` (87), `tRvInSession`, `tPlacementInSession`, `mapId` | Reward given after a rewarded video | **Starts 2025-03-12** |
 
 ### Purchases
 
 | Event | Volume | Main properties | Inferred trigger | Use |
 |---|---|---|---|---|
-| `purchaseCompleted` | 1,639 (935) | `productName` (16), `sku`, `amount`, `currency` (19), `amountInUsd` (empty), `source` | An in-app purchase completes | Purchases (Android only: see section 3); the receipt fields must never be published |
+| `purchaseCompleted` | 1,639 (935) | `productName` (16), `sku`, `amount`, `currency` (20), `amountInUsd` (empty), `source` | An in-app purchase completes | Purchases (Android only: see section 3); the receipt fields must never be published |
 | `inAppPurchase` | 411 (264) | same properties | Same kind of event | **Last seen 2025-03-21**, probably replaced by `purchaseCompleted` (not verified) |
 | `starterPack`, `superStarterPack`, `specialPack`, `standardPack`, `gem1` to `gem6`, `robot`, `robot3Days`, `noAds`, `noAds24Hours`, `noAds24HoursOffer`, `gamerRoadPremium` | 15 to 926 each | none observed beyond the name | One event per product | Product-named events: see section 4 |
 
@@ -113,9 +115,9 @@ Volumes are events (players). *Inferred trigger* and *Use* are interpretations.
 1. **No session id on 10.4% of events.** `achievementUpdated`, `currencyGranted`, `currencySpent`, `itemsGranted`, `achievementClaimed`, `_identityCreate`, `_experimentJoin` and `energyModifierGranted` always have an empty `user_session_id`. These events cannot be attached to a session without a time join.
 2. **A property was renamed during the window.** The ad revenue is under `value` on 69.6% of impressions (from 2025-02-28) and under `amount` on 30.4% (from 2025-03-24). The two never appear together in the data checked. A query that reads only `amount` loses most of the revenue.
 3. **Numbers are text, in several formats.** Decimal separators are a dot, a comma or a slash; `amount` can use scientific notation. Every numeric property needs cleaning before use.
-4. **`amountInUsd` is empty on every purchase.** Purchase amounts come in 19 currencies, so revenue from purchases cannot be summed without exchange rates.
-5. **`adImpression.placement` is always empty.** Where the ad was shown cannot be recovered from this event (`rvRewardClaim.adPlacement` has 89 values, but exists only from 2025-03-12).
-6. **Free-text error messages.** `errorInfo` has about 440 distinct values, many of them network messages in several languages.
+4. **`amountInUsd` is empty on every purchase.** Purchase amounts come in 20 currencies, so revenue from purchases cannot be summed without exchange rates.
+5. **`adImpression.placement` is always empty.** Where the ad was shown cannot be recovered from this event (`rvRewardClaim.adPlacement` has 87 values, but exists only from 2025-03-12).
+6. **Free-text error messages.** `errorInfo` has about 450 distinct values, many of them network messages in several languages.
 7. **Product names used as event names.** Sixteen events (`gem1`, `noAds24Hours`, `starterPack`, ...) are named after a product, while `purchaseCompleted` already exists. Whether they duplicate `purchaseCompleted` is not verified: compare counts before summing purchases.
 8. **Events added or stopped inside the window.** `_experimentJoin` (from 2025-03-07), `rvRewardClaim` (2025-03-12), `_propertiesUpdate` (2025-03-24), `inAppPurchase` (stops 2025-03-21). Comparisons across these dates mix different tracking.
 9. **A data gap on 2025-03-27.** Active players fall by about 60% in every app version. The cause is not known.

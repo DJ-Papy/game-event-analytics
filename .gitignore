@@ -7,3 +7,7 @@ __pycache__/
 data/raw/
 *.log
 .tmp/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/

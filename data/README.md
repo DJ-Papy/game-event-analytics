@@ -3,7 +3,7 @@
 **Player Analytics Event Stream Data** (livestream events from a mobile game), Kaggle.
 
 - URL: https://www.kaggle.com/datasets/zburns/player-analytics-dataset
-- Licence: CC BY 4.0 (as shown on the Kaggle page; verify before republishing anything)
+- Licence: CC BY 4.0, as shown on the Kaggle page on the download date. Only aggregated tables and documentation are published here; no raw event is redistributed.
 - Downloaded on: 2026-11-01
 - Format: 68 Parquet files, about 3.3 GB, in `data/raw/player_analytics/` (not committed: too large for git)
 - Content: about 71 million events, 71,679 players, about 275,700 sessions, from 2025-02-28 to 2025-04-10.

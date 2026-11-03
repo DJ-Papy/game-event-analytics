@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "game-events"
+version = "1.0.0"
+description = "Retention, funnel, ad monetisation and A/B test analysis of a mobile game's event stream"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # DuckDB 2.0 estimates a list of Parquet files at a few dozen rows and builds join hash
+    # tables on the 71M events (out of memory). Kept on 1.x until that is fixed.
+    "duckdb>=1.1,<2",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scipy>=1.13",
+    "statsmodels>=0.14",
+]
+
+[project.optional-dependencies]
+notebooks = ["jupyterlab>=4.0", "ipywidgets>=8.0", "matplotlib>=3.8"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
