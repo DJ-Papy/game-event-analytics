@@ -1,0 +1,3 @@
+# Notebooks present the analysis; the code lives in src/ and sql/.
+# Count them as documentation so the repository language shows Python.
+*.ipynb linguist-documentation
