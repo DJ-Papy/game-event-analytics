@@ -5,9 +5,11 @@
 **Scenario.** The live-ops team of a free-to-play mobile game wants to know where new players are lost, and whether ads drive them away, before changing the ad configuration.
 **Data.** 71 million events of a real mobile game over six weeks (public Kaggle dataset), analysed with SQL (DuckDB on Parquet) and Python, reported in Power BI.
 
-**Dashboard:** [`docs/dashboard.pdf`](docs/dashboard.pdf) · [One-page summary](docs/summary.md) · [Tracking plan](docs/tracking_plan.md)
+**Dashboard (2 pages):** [`docs/dashboard.pdf`](docs/dashboard.pdf) · [One-page summary](docs/summary.md) · [Tracking plan](docs/tracking_plan.md)
 
-![One-page dashboard](docs/dashboard.png)
+![Dashboard, overview page](docs/dashboard.png)
+
+![Dashboard, ads page](docs/dashboard-ads.png)
 
 ## Recommendations
 
